@@ -34,6 +34,10 @@ path.annotations <- read.table('data/PathIDs.txt',as.is=T)$V1
 
 tumortype <- "SKCM"
 
+##
+##  GENES
+##  
+
 ## General gene averages and extrema
 dfe <- im_expr_tt_df %>% group_by(Symbol,Study) %>% summarize(mean_exp=mean(normalized_count,na.rm=T)) ## averages for all genes and all types
 min.per.gene <- dfe %>% group_by(Symbol) %>% summarize(gene_min=min(mean_exp,na.rm=T))
@@ -51,8 +55,8 @@ min.per.gene %>% filter(Symbol %in% feature.ids)
 max.per.gene %>% filter(Symbol %in% feature.ids)
 
 gnstep <- 51
-allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
-plotcolors <- character(length=length(feature.ids)) ; names(plotcolors) <- feature.ids
+allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues")))(length(breakList))
+plotcolors.genes <- character(length=length(feature.ids)) ; names(plotcolors.genes) <- feature.ids
 
 for ( f in feature.ids) {
   gmin <- min.per.gene %>% filter(Symbol==f) %>% .$gene_min
@@ -61,23 +65,39 @@ for ( f in feature.ids) {
   breakList <- seq(gmin,gmax,gstep) 
   b <- gene.vals %>% filter(Symbol==f) %>% .$mean_exp
   cind <- min(which(!(b-breakList)>0)) ## right turnover point
-  plotcolors[f] <- allcolors[cind]
+  plotcolors.genes[f] <- allcolors[cind]
 }
 
-## Cell averages - general and extrema
+##
+##  CELLS
+##  
 
-means.per.cell <- fmx_df %>% select(Study,feature.ids) %>% group_by(Study) %>% summarize(cell_mean=mean(T_cells_CD8.Aggregate2,na.rm=T))
+
 # above not sure if we need wrapr::let . See transform.R under functions 
 
 image.ids <- variable.annotations %>% filter(Source=="fmx_df") %>% select(ImageVariableID) %>% as_vector() %>% as.character()
 feature.ids <- variable.annotations %>% filter(Source=="fmx_df") %>% select(FeatureLabel) %>% as_vector() %>% as.character()
 
+fmc <- fmx_df %>% select(Study,feature.ids) %>% .[complete.cases(.),] %>% gather(feature,fraction,feature.ids)
+
+
+## Cell averages - general and extrema
+fmc <- fmx_df %>% select(Study,feature.ids) %>% .[complete.cases(.),] %>% gather(feature,fraction,feature.ids)
+
+dfc <- fmc %>% group_by(feature,Study) %>% summarize(mean_cell=mean(fraction,na.rm=T))
+min.per.cell <- fmc %>%  group_by(feature) %>% summarize(min_cell=min(fraction,na.rm=T))
+max.per.cell <- fmc %>%  group_by(feature) %>% summarize(max_cell=max(fraction,na.rm=T))
+
 df <- fmx_df %>% filter(Study==tumortype) %>% select(feature.ids) ## need to select feature.ids  
 cell.vals <- mean(df[[feature.ids]],na.rm = T) ## will need to change when there are more cells
 
-## WORK HERE NEXT
 cmin <- min(means.per.cell$cell_mean)
 cmax <- max(means.per.cell$cell_mean)
+gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
+breakList <- seq(gmin,gmax,gstep) 
+#b <- gene.vals %>% filter(Symbol==f) %>% .$mean_exp
+cind <- min(which(!(cell.vals-breakList)>0)) ## right turnover point
+plotcolors[f] <- allcolors[cind]
 
 
 
@@ -98,7 +118,7 @@ fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathl
 ## Labels of each of the objects. Can occur more than once.
 obj.ids <- c("T_cell","ICOS",rep("PD-1",6)) ; names(obj.ids) <- pathlabels
 
-fill.color <- c("#00FFFFFF","#FF00FFFF","#FFFF00FF") 
+fill.color <- c("#00FFFF","#FF00FF","#FFFF00") 
 names(fill.color) <- c("T_cell","ICOS","PD-1")
 fill.color.new <- fill.color[obj.ids] ; names(fill.color.new) <- pathlabels
 
@@ -107,7 +127,3 @@ for (s in pathlabels){
 }
 
 grid.draw(w)
-
-## numbers will change and we need to capture them
-## looks useful :
-## https://stat.ethz.ch/R-manual/R-devel/library/grid/doc/grobs.pdf

@@ -1,4 +1,6 @@
-ImageVariableID	FeatureLabel	Source
-T_cell	T_cells_CD8.Aggregate2	fmx_df
-ICOS	ICOS	im_expr_df
-PD-1	PDCD1	im_expr_df
+ImageVariableID	FeatureLabel	Source	ColorScale
+T_cell	T_cells_CD8.Aggregate2	fmx_df	Reds
+Dendritic_cell	Dendritic_cells.Aggregate1	fmx_df	Purples
+Macrophage	Macrophage.Aggregate1	fmx_df	YlOrBr
+ICOS	ICOS	im_expr_df	Greens
+PD-1	PDCD1	im_expr_df	Greens
