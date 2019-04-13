@@ -4,29 +4,35 @@ library(grid)
 library(feather)
 library(tidyverse)
 library(RColorBrewer) 
+source("functions/load_data.R")
+source("functions/transform.R")
+source("functions/utils.R")
 
-## Colors - working area
-gmin <- -0.25
-gmax <- 0.25
-gnstep <- 51
-gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
-##gstep <- 0.01
-breakList <- seq(gmin,gmax,gstep) 
-allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
+source("functions/cellimage_utils.R")
+USE_REMOTE_GS = FALSE
+USE_REMOTE_BQ = FALSE
+panimmune_data <- load_data()
 
-b <- 0.1457
-cind <- min(which(!(b-breakList)>0)) ## right turnover point
-
-usecolor <- allcolors[cind]
-
-##display.brewer.pal(n=7,name="RdBu")
+fmx_df <- panimmune_data$fmx_df
+sample_group_df <- panimmune_data$sample_group_df
+im_expr_df <- panimmune_data$im_expr_df
+## feature_df <- panimmune_data$feature_df ## may not be needed
 
 ## Data
-im_expr_df <- read_feather('data/im_expr_df.feather')
-fmx_df <- read_feather('data/fmx_df.feather')
-feature_df <- read_feather('data/feature_df.feather') ## may not be needed
 tt_df <- fmx_df %>% select(ParticipantBarcode,Study)
 im_expr_tt_df <- inner_join(im_expr_df,tt_df,by="ParticipantBarcode")
+
+## load("see_inside.RData") yields
+
+## "group_col"    "group_df"
+## eg  "Subtype_Curated_Malta_Noushmehr_et_al" and fmx_df filtered to available group annotations 
+
+genes_needed <- c("PDCD1","ICOS")
+dft <- build_multi_immunomodulator_expression_df(group_df,genes_needed,group_col)
+
+cells_needed <- c("T_cells_CD8.Aggregate2","Macrophage.Aggregate1")
+
+
 
 ## Annotations of image objects
 variable.annotations <- read_tsv('data/Image_Variables.tsv')
@@ -107,7 +113,7 @@ w <- pictureGrob(pic)
 gTree.name <- childNames(w) ## label of overall gTree object
 pathlabels <- w$children[[gTree.name]]$childrenOrder ## labels and order of children 
 
-
+1
 fill.color.start <- character(length(pathlabels)) ; names(fill.color.start) <- pathlabels
 for (s in pathlabels){
   fill.color.start[s] <- w$children[[gTree.name]]$children[[s]]$gp$fill 
@@ -127,3 +133,27 @@ for (s in pathlabels){
 }
 
 grid.draw(w)
+
+##
+## OLDER CODE
+##
+
+## Colors - working area
+gmin <- -0.25
+gmax <- 0.25
+gnstep <- 51
+gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
+##gstep <- 0.01
+breakList <- seq(gmin,gmax,gstep) 
+allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
+
+b <- 0.1457
+cind <- min(which(!(b-breakList)>0)) ## right turnover point
+
+usecolor <- allcolors[cind]
+
+##display.brewer.pal(n=7,name="RdBu")
+
+
+
+
