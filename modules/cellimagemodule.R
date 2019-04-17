@@ -7,29 +7,56 @@ library(RColorBrewer)
 source("functions/load_data.R")
 source("functions/transform.R")
 source("functions/utils.R")
-
 source("functions/cellimage_utils.R")
 USE_REMOTE_GS = FALSE
 USE_REMOTE_BQ = FALSE
-panimmune_data <- load_data()
 
+panimmune_data <- load_data()
+fmx_df <- panimmune_data$fmx_df %>% mutate(Tumor_Fraction=1-Stromal_Fraction)
+sample_group_df <- panimmune_data$sample_group_df
+im_expr_df <- panimmune_data$im_expr_df
+## feature_df <- panimmune_data$feature_df ## may not be needed
+
+## These come from the app selection
+## load("see_inside.RData") yields
+## "group_col"    "group_df"
+## eg  "Subtype_Curated_Malta_Noushmehr_et_al" and fmx_df filtered to available group annotations 
+group_df <- group_df %>% mutate(Tumor_Fraction=1-Stromal_Fraction)
+
+## Annotations of image objects
+variable.annotations <- read_tsv('data/cell_image_id_annotations.tsv')
+image.object.annotations <- read.table('data/cell_image_object_ids.txt',as.is=T)$V1
+## must be met 
+## image.object.annotations %in% variable.annotations$ImageVariableID
+
+unique.image.variable.ids <- unique(image.object.annotations)
+
+##
+## Needed cellular data
+##
+
+cois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'fmx_df')
+assert_df_has_columns(group_df,cois)
+
+dfc <- build_cellcontent_df()
+
+##
+## Needed gene expression data
+##
+
+gois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'im_expr_df')
+dfg <- build_multi_immunomodulator_expression_df(group_df,gois,group_col)
+
+## Keep for later 
 ### x %% y     remainder of x divided by y (x mod y)   7 %% 3 = 1
 ### x %/% y    x divided by y but rounded down (integer divide)        7 %/% 3 = 2
 
 
-fmx_df <- panimmune_data$fmx_df
-sample_group_df <- panimmune_data$sample_group_df
-im_expr_df <- panimmune_data$im_expr_df
-## feature_df <- panimmune_data$feature_df ## may not be needed
 
 ## Data
 tt_df <- fmx_df %>% select(ParticipantBarcode,Study)
 im_expr_tt_df <- inner_join(im_expr_df,tt_df,by="ParticipantBarcode")
 
-## load("see_inside.RData") yields
-
-## "group_col"    "group_df"
-## eg  "Subtype_Curated_Malta_Noushmehr_et_al" and fmx_df filtered to available group annotations 
 
 genes_needed <- c("PDCD1","ICOS")
 dft <- build_multi_immunomodulator_expression_df(group_df,genes_needed,group_col)
@@ -113,7 +140,7 @@ plotcolors[f] <- allcolors[cind]
 
 ## Get image and convert to grid object
 pic <- grImport2::readPicture("data/tcell-svg-take3-cairo.svg")
-pic <- grImport2::readPicture("data/tcell-start-cairo-edited.svg")
+#pic <- grImport2::readPicture("data/tcell-start-cairo-edited.svg")
 w <- pictureGrob(pic)
 gTree.name <- childNames(w) ## label of overall gTree object
 pathlabels <- w$children[[gTree.name]]$childrenOrder ## labels and order of children 
@@ -133,8 +160,12 @@ fill.color <- c("#00FFFF","#FF00FF","#FFFF00")
 names(fill.color) <- c("T_cell","ICOS","PD-1")
 fill.color.new <- fill.color[obj.ids] ; names(fill.color.new) <- pathlabels
 
+## 2019 11 17
 fill.color.new <- fill.color.start
-fill.color.new[1:3] <- c("#00FFFF","#FF00FF","#FFFF00")
+#fill.color.new[1:3] <- c("#00FFFF","#FF00FF","#FFFF00")
+
+fill.color.new <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues")))(length(pathlabels))
+names(fill.color.new) <- pathlabels
 
 for (s in pathlabels){
   w$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]

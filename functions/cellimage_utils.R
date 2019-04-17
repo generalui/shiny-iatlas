@@ -1,3 +1,10 @@
+
+get.needed.variables <- function(unique.image.variable.ids,variable.annotations,source){
+  variable.annotations %>% 
+    filter(ImageVariableID %in% unique.image.variable.ids & Source==source) %>%
+    pluck("FeatureLabel") %>% unique()
+}
+
 ## Like filter_immunomodulator_expression_df but for multiple genes
 
 multi_filter_immunomodulator_expression_df <- function(
@@ -43,4 +50,34 @@ build_multi_immunomodulator_expression_df <- function(
     dplyr::inner_join(group_df, expression_df, by = "ID") %>%
     dplyr::select(ID,GROUP, FILTER, LOG_COUNT)
 
+}
+
+# cellcontent functions -------------------------------------------------------
+
+build_cellcontent_df <- function(df, group_column){
+  assert_df_has_columns(df, c(group_column, "Stromal_Fraction", "leukocyte_fraction"))
+  long_df <- df %>% 
+    dplyr::select(
+      GROUP = group_column,
+      "Stromal_Fraction", 
+      "leukocyte_fraction") %>% 
+    tidyr::drop_na()
+  
+  if(nrow(long_df) == 0) return(long_df)
+  
+  result_df <- long_df %>% 
+    dplyr::mutate(Tumor_Fraction = 1 - Stromal_Fraction) %>% 
+    tidyr::gather(fraction_type, fraction, -GROUP)
+  assert_df_has_columns(result_df, c("GROUP", "fraction_type", "fraction"))
+  return(result_df)
+}
+
+build_cell_fraction_df <- function(df, group_column, value_columns){
+  assert_df_has_columns(df, c(group_column, value_columns))
+  result_df <- df %>% 
+    dplyr::select(GROUP = group_column, value_columns) %>% 
+    tidyr::gather(fraction_type, fraction, -GROUP) %>% 
+    tidyr::drop_na()
+  assert_df_has_columns(result_df, c("GROUP", "fraction_type", "fraction"))
+  return(result_df)
 }
