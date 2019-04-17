@@ -13,6 +13,10 @@ USE_REMOTE_GS = FALSE
 USE_REMOTE_BQ = FALSE
 panimmune_data <- load_data()
 
+### x %% y     remainder of x divided by y (x mod y)   7 %% 3 = 1
+### x %/% y    x divided by y but rounded down (integer divide)        7 %/% 3 = 2
+
+
 fmx_df <- panimmune_data$fmx_df
 sample_group_df <- panimmune_data$sample_group_df
 im_expr_df <- panimmune_data$im_expr_df
@@ -108,12 +112,13 @@ plotcolors[f] <- allcolors[cind]
 
 
 ## Get image and convert to grid object
+pic <- grImport2::readPicture("data/tcell-svg-take3-cairo.svg")
 pic <- grImport2::readPicture("data/tcell-start-cairo-edited.svg")
 w <- pictureGrob(pic)
 gTree.name <- childNames(w) ## label of overall gTree object
 pathlabels <- w$children[[gTree.name]]$childrenOrder ## labels and order of children 
 
-1
+
 fill.color.start <- character(length(pathlabels)) ; names(fill.color.start) <- pathlabels
 for (s in pathlabels){
   fill.color.start[s] <- w$children[[gTree.name]]$children[[s]]$gp$fill 
@@ -128,11 +133,19 @@ fill.color <- c("#00FFFF","#FF00FF","#FFFF00")
 names(fill.color) <- c("T_cell","ICOS","PD-1")
 fill.color.new <- fill.color[obj.ids] ; names(fill.color.new) <- pathlabels
 
+fill.color.new <- fill.color.start
+fill.color.new[1:3] <- c("#00FFFF","#FF00FF","#FFFF00")
+
 for (s in pathlabels){
   w$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]
 }
 
 grid.draw(w)
+
+
+
+
+
 
 ##
 ## OLDER CODE
