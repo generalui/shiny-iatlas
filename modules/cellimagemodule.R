@@ -141,7 +141,7 @@ plotcolors[f] <- allcolors[cind]
 ## Get image and convert to grid object
 pic <- grImport2::readPicture("data/tcell-svg-take3-cairo.svg")
 #pic <- grImport2::readPicture("data/tcell-start-cairo-edited.svg")
-w <- pictureGrob(pic)
+w <- grImport2::pictureGrob(pic)
 gTree.name <- childNames(w) ## label of overall gTree object
 pathlabels <- w$children[[gTree.name]]$childrenOrder ## labels and order of children 
 
@@ -164,7 +164,7 @@ fill.color.new <- fill.color[obj.ids] ; names(fill.color.new) <- pathlabels
 fill.color.new <- fill.color.start
 #fill.color.new[1:3] <- c("#00FFFF","#FF00FF","#FFFF00")
 
-fill.color.new <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues")))(length(pathlabels))
+fill.color.new <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues"))(length(pathlabels))
 names(fill.color.new) <- pathlabels
 
 for (s in pathlabels){
