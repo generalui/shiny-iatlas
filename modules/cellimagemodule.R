@@ -37,15 +37,34 @@ unique.image.variable.ids <- unique(image.object.annotations)
 
 cois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'fmx_df')
 assert_df_has_columns(group_df,cois)
-
 dfc <- build_cellcontent_df()
-
+## or should that be 
+dfc <- build_cellcontent_df(group_df,group_col)
+dfc <- dfc %>% rename(Group=GROUP,Variable=fraction_type,Value=fraction)
 ##
 ## Needed gene expression data
 ##
 
 gois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'im_expr_df')
-dfg <- build_multi_immunomodulator_expression_df(group_df,gois,group_col)
+dfg <- build_multi_immunomodulator_expression_df(group_df,gois,group_col)  ## Gene= FILTER 
+dfg <- dfg %>% select(Group=GROUP,Variable=FILTER,Value=LOG_COUNT)
+
+#########################################################################
+##
+## EXPLORING
+##
+#########################################################################
+
+gmean <- dfg %>% group_by(Group,Variable) %>% summarize(Mean=mean(Value)) 
+gmax <- dfg %>% group_by(Variable) %>% summarize(Max=max(Value))
+gmin <- dfg %>% group_by(Variable) %>% summarize(Min=min(Value)) 
+
+
+#########################################################################
+##
+## OLDER CODE BELOW 
+##
+#########################################################################
 
 ## Keep for later 
 ### x %% y     remainder of x divided by y (x mod y)   7 %% 3 = 1
