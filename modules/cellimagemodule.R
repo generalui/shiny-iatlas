@@ -24,11 +24,12 @@ im_expr_df <- panimmune_data$im_expr_df
 group_df <- group_df %>% mutate(Tumor_Fraction=1-Stromal_Fraction)
 
 ## Annotations of image objects
-variable.annotations <- read_tsv('data/cell_image_id_annotations.tsv')
+## Variable annotations are ImageVariableID, FeatureLabel, Source, ColorScale
+variable.annotations <- read_tsv('data/cell_image_id_annotations.tsv') 
+## Image obects, in order, labeled in terms of ImageVariableID
 image.object.annotations <- read.table('data/cell_image_object_ids.txt',as.is=T)$V1
 ## must be met 
 ## image.object.annotations %in% variable.annotations$ImageVariableID
-
 unique.image.variable.ids <- unique(image.object.annotations)
 
 ##
@@ -36,11 +37,11 @@ unique.image.variable.ids <- unique(image.object.annotations)
 ##
 
 cois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'fmx_df')
-assert_df_has_columns(group_df,cois)
-dfc <- build_cellcontent_df()
-## or should that be 
-dfc <- build_cellcontent_df(group_df,group_col)
+dfc <- build_cellcontent_df(group_df,group_col) 
 dfc <- dfc %>% rename(Group=GROUP,Variable=fraction_type,Value=fraction)
+## Note that ParticipantBarcode is gone.  Each Group,Variable combo simply has instances
+
+
 ##
 ## Needed gene expression data
 ##
@@ -48,6 +49,12 @@ dfc <- dfc %>% rename(Group=GROUP,Variable=fraction_type,Value=fraction)
 gois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'im_expr_df')
 dfg <- build_multi_immunomodulator_expression_df(group_df,gois,group_col)  ## Gene= FILTER 
 dfg <- dfg %>% select(Group=GROUP,Variable=FILTER,Value=LOG_COUNT)
+## Note that "ID" aka ParticipantBarcode is gone.  Each Group,Variable combo simply has instances
+
+### data frame of all values
+
+dfv <- dplyr::bind_rows(dfc, dfg)
+
 
 #########################################################################
 ##
@@ -55,9 +62,49 @@ dfg <- dfg %>% select(Group=GROUP,Variable=FILTER,Value=LOG_COUNT)
 ##
 #########################################################################
 
-gmean <- dfg %>% group_by(Group,Variable) %>% summarize(Mean=mean(Value)) 
-gmax <- dfg %>% group_by(Variable) %>% summarize(Max=max(Value))
-gmin <- dfg %>% group_by(Variable) %>% summarize(Min=min(Value)) 
+meanz <- dfv %>% group_by(Group,Variable) %>% summarize(Mean=mean(Value)) 
+maxz <- dfv %>% group_by(Variable) %>% summarize(Max=max(Value))
+minz <- dfv %>% group_by(Variable) %>% summarize(Min=min(Value)) 
+
+#########################################################################
+##
+## Get image and convert to grid object
+##
+#########################################################################
+
+pic <- grImport2::readPicture("data/tcell-svg-take3-cairo.svg")
+#pic <- grImport2::readPicture("data/tcell-start-cairo-edited.svg")
+w <- grImport2::pictureGrob(pic)
+gTree.name <- childNames(w) ## label of overall gTree object
+pathlabels <- w$children[[gTree.name]]$childrenOrder ## labels and order of children 
+fill.color.start <- character(length(pathlabels)) ; names(fill.color.start) <- pathlabels
+for (s in pathlabels){
+  fill.color.start[s] <- w$children[[gTree.name]]$children[[s]]$gp$fill 
+}
+fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathlabels
+
+voi <- "CD274"
+vmin <- minvec[voi]
+vmax <- maxvec[voi]
+vnstep <- 51
+vstep <- (vmax-vmin)/(vnstep-1) ## size of step 
+
+soi <- "BRCA.LumA"
+dfv %>% dplyr::filter(Group==soi) %>% dplyr::select(-Group)
+
+breakList <- seq(vmin,vmax,vstep) 
+allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
+
+#now get value. Not sure why these do not work
+meanz %>% dplyr::filter(Group==soi) %>% dplyr::select(-Group) 
+meanz %>% dplyr::filter(Group==soi) %>% purrr::pluck(Variable,Mean)
+
+b <- 0.1457
+cind <- min(which(!(b-breakList)>0)) ## right turnover point
+
+usecolor <- allcolors[cind]
+
+
 
 
 #########################################################################
@@ -69,8 +116,6 @@ gmin <- dfg %>% group_by(Variable) %>% summarize(Min=min(Value))
 ## Keep for later 
 ### x %% y     remainder of x divided by y (x mod y)   7 %% 3 = 1
 ### x %/% y    x divided by y but rounded down (integer divide)        7 %/% 3 = 2
-
-
 
 ## Data
 tt_df <- fmx_df %>% select(ParticipantBarcode,Study)
@@ -157,20 +202,7 @@ plotcolors[f] <- allcolors[cind]
 
 
 
-## Get image and convert to grid object
-pic <- grImport2::readPicture("data/tcell-svg-take3-cairo.svg")
-#pic <- grImport2::readPicture("data/tcell-start-cairo-edited.svg")
-w <- grImport2::pictureGrob(pic)
-gTree.name <- childNames(w) ## label of overall gTree object
-pathlabels <- w$children[[gTree.name]]$childrenOrder ## labels and order of children 
 
-
-fill.color.start <- character(length(pathlabels)) ; names(fill.color.start) <- pathlabels
-for (s in pathlabels){
-  fill.color.start[s] <- w$children[[gTree.name]]$children[[s]]$gp$fill 
-}
-
-fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathlabels
 
 ## Labels of each of the objects. Can occur more than once.
 obj.ids <- c("T_cell","ICOS",rep("PD-1",6)) ; names(obj.ids) <- pathlabels
@@ -183,7 +215,7 @@ fill.color.new <- fill.color[obj.ids] ; names(fill.color.new) <- pathlabels
 fill.color.new <- fill.color.start
 #fill.color.new[1:3] <- c("#00FFFF","#FF00FF","#FFFF00")
 
-fill.color.new <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues"))(length(pathlabels))
+fill.color.new <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues"))(length(pathlabels)))
 names(fill.color.new) <- pathlabels
 
 for (s in pathlabels){
@@ -206,8 +238,21 @@ gmin <- -0.25
 gmax <- 0.25
 gnstep <- 51
 gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
+
+minvec <- minz %>% pluck("Min") ; names(minvec) <- minz %>% pluck("Variable")
+maxvec <- maxz %>% pluck("Max") ; names(maxvec) <- maxz %>% pluck("Variable")
+
+voi <- "CD274"
+vmin <- minvec[voi]
+vmax <- maxvec[voi]
+vnstep <- 51
+vstep <- (vmax-vmin)/(vnstep-1) ## size of step 
+
+soi <- "BRCA.LumA"
+dfv %>% dplyr::filter(Group==soi) %>% dplyr::select(-Group)
+
 ##gstep <- 0.01
-breakList <- seq(gmin,gmax,gstep) 
+breakList <- seq(vmin,vmax,vstep) 
 allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
 
 b <- 0.1457
