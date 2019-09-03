@@ -5,8 +5,11 @@ get.needed.variables <- function(unique.image.variable.ids,variable.annotations,
     pluck("FeatureLabel") %>% unique()
 }
 
-## Like filter_immunomodulator_expression_df but for multiple genes
 
+# gene expression functions -------------------------------------------------------
+
+
+## Like filter_immunomodulator_expression_df but for multiple genes
 multi_filter_immunomodulator_expression_df <- function(
   df, id_col, filter_col, expression_col, filter_values){
   
@@ -81,3 +84,23 @@ build_cell_fraction_df <- function(df, group_column, value_columns){
   assert_df_has_columns(result_df, c("GROUP", "fraction_type", "fraction"))
   return(result_df)
 }
+
+#--------- color functions -----------
+
+
+## For the variable of interest, get min max possible values, color range and color value
+getVarColor <- function(voi,soi,colormap){
+  vmin <- minvec[voi]
+  vmax <- maxvec[voi]
+  vnstep <- 51
+  vstep <- (vmax-vmin)/(vnstep-1) ## size of step 
+  breakList <- seq(vmin,vmax,vstep) 
+  allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name=colormap)))(length(breakList))
+  display.val <- dfv %>% dplyr::filter(Group==soi,Variable==voi) %>% dplyr::select(-Group,-Variable) %>% purrr::pluck("Value") %>% mean()
+  b <- display.val
+  cind <- min(which(!(b-breakList)>0)) ## right turnover point
+  usecolor <- allcolors[cind]
+  usecolor
+}
+
+

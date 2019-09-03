@@ -53,18 +53,24 @@ dfg <- dfg %>% select(Group=GROUP,Variable=FILTER,Value=LOG_COUNT)
 
 ### data frame of all values
 
+## dfc$Variable is chr, dfg$Variable is factor
 dfv <- dplyr::bind_rows(dfc, dfg)
 
-
 #########################################################################
 ##
-## EXPLORING
+## Variables ranges and summary
 ##
 #########################################################################
 
+## Mean Value per Group and Variable
 meanz <- dfv %>% group_by(Group,Variable) %>% summarize(Mean=mean(Value)) 
+## Max Value for each Variable (includes avg over Group)
 maxz <- dfv %>% group_by(Variable) %>% summarize(Max=max(Value))
+## Min Value for each Variable (includes avg over Group)
 minz <- dfv %>% group_by(Variable) %>% summarize(Min=min(Value)) 
+## Vector versions
+minvec <- minz %>% pluck("Min") ; names(minvec) <- minz %>% pluck("Variable")
+maxvec <- maxz %>% pluck("Max") ; names(maxvec) <- maxz %>% pluck("Variable")
 
 #########################################################################
 ##
@@ -81,28 +87,32 @@ fill.color.start <- character(length(pathlabels)) ; names(fill.color.start) <- p
 for (s in pathlabels){
   fill.color.start[s] <- w$children[[gTree.name]]$children[[s]]$gp$fill 
 }
-fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathlabels
+fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathlabels ## this is for editing
 
+## For the variable of interest, get min max possible values, color range and color value
 voi <- "CD274"
-vmin <- minvec[voi]
-vmax <- maxvec[voi]
-vnstep <- 51
-vstep <- (vmax-vmin)/(vnstep-1) ## size of step 
+soi <- "BRCA.LumA"
+colormap <- variable.annotations %>% filter(FeatureLabel==voi) %>% pluck("ColorScale")
+getVarColor(voi,soi,colormap)
+
+
+#########################################################################
+##
+## Get New Colors
+##
+#########################################################################
 
 soi <- "BRCA.LumA"
-dfv %>% dplyr::filter(Group==soi) %>% dplyr::select(-Group)
 
-breakList <- seq(vmin,vmax,vstep) 
-allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
+for (ioa in image.object.annotations){
+  datavar <- variable.annotations %>% filter(ImageVariableID==ioa) %>% pluck("FeatureLabel")
+  colormap <-   variable.annotations %>% filter(ImageVariableID==ioa) %>% pluck("ColorScale")
+  getVarColor(datavar,soi,colormap)
+}
 
-#now get value. Not sure why these do not work
-meanz %>% dplyr::filter(Group==soi) %>% dplyr::select(-Group) 
-meanz %>% dplyr::filter(Group==soi) %>% purrr::pluck(Variable,Mean)
+## task :
+## for vector of image.object.annotations, get colors
 
-b <- 0.1457
-cind <- min(which(!(b-breakList)>0)) ## right turnover point
-
-usecolor <- allcolors[cind]
 
 
 
@@ -239,8 +249,6 @@ gmax <- 0.25
 gnstep <- 51
 gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
 
-minvec <- minz %>% pluck("Min") ; names(minvec) <- minz %>% pluck("Variable")
-maxvec <- maxz %>% pluck("Max") ; names(maxvec) <- maxz %>% pluck("Variable")
 
 voi <- "CD274"
 vmin <- minvec[voi]
