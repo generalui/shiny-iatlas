@@ -36,8 +36,9 @@ unique.image.variable.ids <- unique(image.object.annotations)
 ## Needed cellular data
 ##
 
-cois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'fmx_df')
-dfc <- build_cellcontent_df(group_df,group_col) 
+
+cois <- get.data.variables(unique.image.variable.ids,variable.annotations,'fmx_df')
+dfc <- build_cellcontent_df(group_df,cois,group_col) 
 dfc <- dfc %>% rename(Group=GROUP,Variable=fraction_type,Value=fraction)
 ## Note that ParticipantBarcode is gone.  Each Group,Variable combo simply has instances
 
@@ -46,8 +47,9 @@ dfc <- dfc %>% rename(Group=GROUP,Variable=fraction_type,Value=fraction)
 ## Needed gene expression data
 ##
 
-gois <- get.needed.variables(unique.image.variable.ids,variable.annotations,'im_expr_df')
-dfg <- build_multi_immunomodulator_expression_df(group_df,gois,group_col)  ## Gene= FILTER 
+## input unique image variable IDs, get genes with IDs as in expression matrix
+gois <- get.data.variables(unique.image.variable.ids,variable.annotations,'im_expr_df')
+dfg <- build_multi_imageprotein_expression_df(group_df,gois,group_col)  ## dfg$FILTER is the Gene column 
 dfg <- dfg %>% select(Group=GROUP,Variable=FILTER,Value=LOG_COUNT)
 ## Note that "ID" aka ParticipantBarcode is gone.  Each Group,Variable combo simply has instances
 
