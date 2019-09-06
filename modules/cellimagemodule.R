@@ -27,10 +27,10 @@ group_df <- group_df %>% mutate(Tumor_Fraction=1-Stromal_Fraction)
 ## Variable annotations are ImageVariableID, FeatureLabel, Source, ColorScale
 variable.annotations <- read_tsv('data/cell_image_id_annotations.tsv') 
 ## Image obects, in order, labeled in terms of ImageVariableID
-image.object.annotations <- read.table('data/cell_image_object_ids.txt',as.is=T)$V1
+image.object.labels <- read.table('data/cell_image_object_ids.txt',as.is=T)$V1
 ## must be met 
-## image.object.annotations %in% variable.annotations$ImageVariableID
-unique.image.variable.ids <- unique(image.object.annotations)
+## image.object.labels %in% variable.annotations$ImageVariableID
+unique.image.variable.ids <- unique(image.object.labels)
 
 ##
 ## Needed cellular data
@@ -89,6 +89,7 @@ fill.color.start <- character(length(pathlabels)) ; names(fill.color.start) <- p
 for (s in pathlabels){
   fill.color.start[s] <- w$children[[gTree.name]]$children[[s]]$gp$fill 
 }
+wnew <- w
 fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathlabels ## this is for editing
 
 ## For the variable of interest, get min max possible values, color range and color value
@@ -106,172 +107,23 @@ getVarColor(voi,soi,colormap)
 
 soi <- "BRCA.LumA"
 
-for (ioa in image.object.annotations){
+for (ind in seq(1,length(image.object.labels))){
+  ioa <- image.object.labels[ind]
+  cat("working on",ioa,"\n")
   datavar <- variable.annotations %>% filter(ImageVariableID==ioa) %>% pluck("FeatureLabel")
   colormap <-   variable.annotations %>% filter(ImageVariableID==ioa) %>% pluck("ColorScale")
-  getVarColor(datavar,soi,colormap)
+  fill.color.new[ind] <- getVarColor(datavar,soi,colormap)
 }
-
-## task :
-## for vector of image.object.annotations, get colors
-
-
-
-
 
 #########################################################################
 ##
-## OLDER CODE BELOW 
+## DRAW 
 ##
 #########################################################################
 
-## Keep for later 
-### x %% y     remainder of x divided by y (x mod y)   7 %% 3 = 1
-### x %/% y    x divided by y but rounded down (integer divide)        7 %/% 3 = 2
-
-## Data
-tt_df <- fmx_df %>% select(ParticipantBarcode,Study)
-im_expr_tt_df <- inner_join(im_expr_df,tt_df,by="ParticipantBarcode")
-
-
-genes_needed <- c("PDCD1","ICOS")
-dft <- build_multi_immunomodulator_expression_df(group_df,genes_needed,group_col)
-
-cells_needed <- c("T_cells_CD8.Aggregate2","Macrophage.Aggregate1")
-
-
-
-## Annotations of image objects
-variable.annotations <- read_tsv('data/Image_Variables.tsv')
-path.annotations <- read.table('data/PathIDs.txt',as.is=T)$V1
-
-tumortype <- "SKCM"
-
-##
-##  GENES
-##  
-
-## General gene averages and extrema
-dfe <- im_expr_tt_df %>% group_by(Symbol,Study) %>% summarize(mean_exp=mean(normalized_count,na.rm=T)) ## averages for all genes and all types
-min.per.gene <- dfe %>% group_by(Symbol) %>% summarize(gene_min=min(mean_exp,na.rm=T))
-max.per.gene <- dfe %>% group_by(Symbol) %>% summarize(gene_max=max(mean_exp,na.rm=T))
-
-## specific values for the choice
-image.ids <- variable.annotations %>% filter(Source=="im_expr_df") %>% select(ImageVariableID) %>% as_vector() %>% as.character()
-feature.ids <- variable.annotations %>% filter(Source=="im_expr_df") %>% select(FeatureLabel) %>% as_vector() %>% as.character()
-gene.vals <- im_expr_tt_df %>% filter(Study==tumortype,Symbol %in% feature.ids) %>% select(Symbol,normalized_count) %>% 
-              group_by(Symbol) %>% summarize(mean_exp=mean(normalized_count))
-gene.vals <- dfe %>% filter(Study==tumortype,Symbol %in% feature.ids)
-
-## Compute colors for the specific choice
-min.per.gene %>% filter(Symbol %in% feature.ids)
-max.per.gene %>% filter(Symbol %in% feature.ids)
-
-gnstep <- 51
-allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues")))(length(breakList))
-plotcolors.genes <- character(length=length(feature.ids)) ; names(plotcolors.genes) <- feature.ids
-
-for ( f in feature.ids) {
-  gmin <- min.per.gene %>% filter(Symbol==f) %>% .$gene_min
-  gmax <- max.per.gene %>% filter(Symbol==f) %>% .$gene_max
-  gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
-  breakList <- seq(gmin,gmax,gstep) 
-  b <- gene.vals %>% filter(Symbol==f) %>% .$mean_exp
-  cind <- min(which(!(b-breakList)>0)) ## right turnover point
-  plotcolors.genes[f] <- allcolors[cind]
+for (s in pathlabels ){
+  wnew$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]
 }
 
-##
-##  CELLS
-##  
-
-
-# above not sure if we need wrapr::let . See transform.R under functions 
-
-image.ids <- variable.annotations %>% filter(Source=="fmx_df") %>% select(ImageVariableID) %>% as_vector() %>% as.character()
-feature.ids <- variable.annotations %>% filter(Source=="fmx_df") %>% select(FeatureLabel) %>% as_vector() %>% as.character()
-
-fmc <- fmx_df %>% select(Study,feature.ids) %>% .[complete.cases(.),] %>% gather(feature,fraction,feature.ids)
-
-
-## Cell averages - general and extrema
-fmc <- fmx_df %>% select(Study,feature.ids) %>% .[complete.cases(.),] %>% gather(feature,fraction,feature.ids)
-
-dfc <- fmc %>% group_by(feature,Study) %>% summarize(mean_cell=mean(fraction,na.rm=T))
-min.per.cell <- fmc %>%  group_by(feature) %>% summarize(min_cell=min(fraction,na.rm=T))
-max.per.cell <- fmc %>%  group_by(feature) %>% summarize(max_cell=max(fraction,na.rm=T))
-
-df <- fmx_df %>% filter(Study==tumortype) %>% select(feature.ids) ## need to select feature.ids  
-cell.vals <- mean(df[[feature.ids]],na.rm = T) ## will need to change when there are more cells
-
-cmin <- min(means.per.cell$cell_mean)
-cmax <- max(means.per.cell$cell_mean)
-gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
-breakList <- seq(gmin,gmax,gstep) 
-#b <- gene.vals %>% filter(Symbol==f) %>% .$mean_exp
-cind <- min(which(!(cell.vals-breakList)>0)) ## right turnover point
-plotcolors[f] <- allcolors[cind]
-
-
-
-
-
-## Labels of each of the objects. Can occur more than once.
-obj.ids <- c("T_cell","ICOS",rep("PD-1",6)) ; names(obj.ids) <- pathlabels
-
-fill.color <- c("#00FFFF","#FF00FF","#FFFF00") 
-names(fill.color) <- c("T_cell","ICOS","PD-1")
-fill.color.new <- fill.color[obj.ids] ; names(fill.color.new) <- pathlabels
-
-## 2019 11 17
-fill.color.new <- fill.color.start
-#fill.color.new[1:3] <- c("#00FFFF","#FF00FF","#FFFF00")
-
-fill.color.new <- colorRampPalette(rev(brewer.pal(n = 7,name="Blues"))(length(pathlabels)))
-names(fill.color.new) <- pathlabels
-
-for (s in pathlabels){
-  w$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]
-}
-
-grid.draw(w)
-
-
-
-
-
-
-##
-## OLDER CODE
-##
-
-## Colors - working area
-gmin <- -0.25
-gmax <- 0.25
-gnstep <- 51
-gstep <- (gmax-gmin)/(gnstep-1) ## size of step 
-
-
-voi <- "CD274"
-vmin <- minvec[voi]
-vmax <- maxvec[voi]
-vnstep <- 51
-vstep <- (vmax-vmin)/(vnstep-1) ## size of step 
-
-soi <- "BRCA.LumA"
-dfv %>% dplyr::filter(Group==soi) %>% dplyr::select(-Group)
-
-##gstep <- 0.01
-breakList <- seq(vmin,vmax,vstep) 
-allcolors <- colorRampPalette(rev(brewer.pal(n = 7,name="RdBu")))(length(breakList))
-
-b <- 0.1457
-cind <- min(which(!(b-breakList)>0)) ## right turnover point
-
-usecolor <- allcolors[cind]
-
-##display.brewer.pal(n=7,name="RdBu")
-
-
-
+grid.draw(wnew)
 

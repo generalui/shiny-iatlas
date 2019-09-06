@@ -12,7 +12,7 @@ PD-L2	PDCD1LG2	im_expr_df	Greens
 PD-L1	CD274	im_expr_df	Greens
 CD28	CD28	im_expr_df	Greens
 CTLA-4	CTLA4	im_expr_df	Greens
-CD40L	CD40L	im_expr_df	Greens
+CD40L	CD40LG	im_expr_df	Greens
 CD40	CD40	im_expr_df	Greens
 ICOSL	ICOSLG	im_expr_df	Greens
 CD86	CD80	im_expr_df	Greens
