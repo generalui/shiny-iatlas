@@ -92,12 +92,6 @@ for (s in pathlabels){
 wnew <- w
 fill.color.new <- character(length(pathlabels)) ; names(fill.color.new) <- pathlabels ## this is for editing
 
-## For the variable of interest, get min max possible values, color range and color value
-voi <- "CD274"
-soi <- "BRCA.LumA"
-colormap <- variable.annotations %>% filter(FeatureLabel==voi) %>% pluck("ColorScale")
-getVarColor(voi,soi,colormap)
-
 
 #########################################################################
 ##
@@ -105,14 +99,18 @@ getVarColor(voi,soi,colormap)
 ##
 #########################################################################
 
-soi <- "BRCA.LumA"
+sois <- unique(group_df[[group_col]])
+soi <- "BRCA.LumB"
+soi <- sois[5]
 
 for (ind in seq(1,length(image.object.labels))){
   ioa <- image.object.labels[ind]
-  cat("working on",ioa,"\n")
   datavar <- variable.annotations %>% filter(ImageVariableID==ioa) %>% pluck("FeatureLabel")
   colormap <-   variable.annotations %>% filter(ImageVariableID==ioa) %>% pluck("ColorScale")
   fill.color.new[ind] <- getVarColor(datavar,soi,colormap)
+}
+for (s in pathlabels ){
+  wnew$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]
 }
 
 #########################################################################
@@ -121,9 +119,6 @@ for (ind in seq(1,length(image.object.labels))){
 ##
 #########################################################################
 
-for (s in pathlabels ){
-  wnew$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]
-}
 
 grid.draw(wnew)
 
