@@ -263,7 +263,7 @@ explorepage <- dashboardPage(
       ),
       tabItem(
         tabName = "cellimage",
-        iotarget_UI("module10")
+        cellimage_UI("module10")
       ),
       tabItem(
         tabName = "datainfo",
