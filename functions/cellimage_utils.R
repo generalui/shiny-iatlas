@@ -1,3 +1,4 @@
+
 ##
 ## Get data variables from image variables
 ## 
