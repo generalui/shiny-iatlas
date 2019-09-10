@@ -107,7 +107,17 @@ shinyServer(function(input, output, session) {
         reactive(sample_group_df()),
         reactive(subset_df()),
         reactive(plot_colors()))
-    
+
+    # Cellular Image
+    callModule(
+      cellimage,
+      "module10",
+      reactive(input$ss_choice),
+      reactive(group_internal_choice()),
+      reactive(sample_group_df()),
+      reactive(subset_df()),
+      reactive(plot_colors()))
+        
     # subtype predictor
     callModule(
         subtypepredictor,
@@ -148,6 +158,9 @@ shinyServer(function(input, output, session) {
     })
     observeEvent(input$link_to_module9, {
       shinydashboard::updateTabItems(session, "explorertabs", "iotargets")
+    })
+    observeEvent(input$link_to_module10, {
+      shinydashboard::updateTabItems(session, "explorertabs", "cellimage")
     })
     observeEvent(input$link_to_module_subtypepredictor, {
         updateNavlistPanel(session, "toolstabs", "Immune Subtype Predictor")

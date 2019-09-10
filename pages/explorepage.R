@@ -55,6 +55,11 @@ explorepage <- dashboardPage(
                  "Driver Associations",
                  tabName = "drivers",
                  icon = icon("cog")
+               ),
+               menuSubItem(
+                 "Cellular Image",
+                 tabName = "cellimage",
+                 icon = icon("cog")
                )
       ),
       menuItem("Data Description",
@@ -208,6 +213,14 @@ explorepage <- dashboardPage(
               imgSrc = "images/iotargets.png",
               boxText = "Explore the expression of genes that code for immuno-oncological (IO) targets .",
               linkText = "Open Module"
+            ),
+            imgLinkBox(
+              width = 6,
+              title = "Cellular Image",
+              linkId = "link_to_module10",
+              imgSrc = "images/cellimage.png",
+              boxText = "Explore estimages of cell and immundulator content on an illustration.",
+              linkText = "Open Module"
             )
           )
         )
@@ -247,6 +260,10 @@ explorepage <- dashboardPage(
       tabItem(
         tabName = "iotargets",
         iotarget_UI("module9")
+      ),
+      tabItem(
+        tabName = "cellimage",
+        cellimage_UI("module10")
       ),
       tabItem(
         tabName = "datainfo",
