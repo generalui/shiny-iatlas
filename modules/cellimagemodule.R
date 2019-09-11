@@ -2,15 +2,6 @@ cellimage_UI <- function(id) {
   
   ns <- NS(id)
   
-  sample_group_vector <-  panimmune_data$sample_group_df %>% 
-    dplyr::filter(sample_group ==  group_internal_choice) %>% 
-    `if`(
-      group_internal_choice == "Subtype_Curated_Malta_Noushmehr_et_al",
-      dplyr::filter(., `TCGA Studies`== study_subset_selection),
-      .
-    ) %>% 
-    dplyr::pull(FeatureValue)
-  
   tagList(
     titleBox("iAtlas Explorer — Cellular Image"),
     textBox(
@@ -33,11 +24,7 @@ cellimage_UI <- function(id) {
         optionsBox(
           column(
             width = 6,
-            selectInput(
-              ns("tbd_method"),
-              "Select Group",
-              choices = sample_group_vector
-            )
+            uiOutput(ns("ui"))
           )
       ),
             
@@ -64,7 +51,27 @@ cellimage <- function(
     subset_df, 
     plot_colors
 ){
+    
+    ns <- session$ns
 
+    output$ui <- renderUI({
+        sample_group_vector <-  panimmune_data$sample_group_df %>% 
+            dplyr::filter(sample_group ==  group_internal_choice) %>% 
+            `if`(
+                group_internal_choice == "Subtype_Curated_Malta_Noushmehr_et_al",
+                dplyr::filter(., `TCGA Studies`== study_subset_selection),
+                .
+            ) %>% 
+            dplyr::pull(FeatureValue)
+        selectInput(
+            ns("tbd_method"),
+            "Select Group",
+            choices = sample_group_vector
+        )
+
+    })
+    
+    
   data_df <- reactive({
     subset_df() %>% 
       dplyr::select(
