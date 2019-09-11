@@ -24,7 +24,7 @@ cellimage_UI <- function(id) {
         optionsBox(
           column(
             width = 6,
-            uiOutput(ns("ui"))
+            uiOutput(ns("select_ui"))
           )
       ),
             
@@ -46,7 +46,8 @@ cellimage <- function(
     output, 
     session, 
     group_display_choice, 
-    group_internal_choice, 
+    group_internal_choice,
+    study_subset_choice,
     sample_group_df,
     subset_df, 
     plot_colors
@@ -54,18 +55,26 @@ cellimage <- function(
     
     ns <- session$ns
 
-    output$ui <- renderUI({
-        print("test")
-        print(group_internal_choice())
+    output$select_ui <- renderUI({
+        
+        req(
+            panimmune_data$sample_group_df,
+            group_internal_choice()
+        )
+        
+        if(group_internal_choice() == "Subtype_Curated_Malta_Noushmehr_et_al"){
+            req(study_subset_choice())
+        }
         
         sample_group_vector <-  panimmune_data$sample_group_df %>% 
             dplyr::filter(sample_group ==  group_internal_choice()) %>% 
-            # `if`(
-            #     group_internal_choice == "Subtype_Curated_Malta_Noushmehr_et_al",
-            #     dplyr::filter(., `TCGA Studies`== study_subset_selection),
-            #     .
-            # ) %>% 
+            `if`(
+                group_internal_choice() == "Subtype_Curated_Malta_Noushmehr_et_al",
+                dplyr::filter(., `TCGA Studies`== study_subset_choice()),
+                .
+            ) %>%
             dplyr::pull(FeatureValue)
+        
         selectInput(
             ns("tbd_method"),
             "Select Group",
