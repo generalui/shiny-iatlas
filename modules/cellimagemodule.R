@@ -55,13 +55,16 @@ cellimage <- function(
     ns <- session$ns
 
     output$ui <- renderUI({
+        print("test")
+        print(group_internal_choice())
+        
         sample_group_vector <-  panimmune_data$sample_group_df %>% 
-            dplyr::filter(sample_group ==  group_internal_choice) %>% 
-            `if`(
-                group_internal_choice == "Subtype_Curated_Malta_Noushmehr_et_al",
-                dplyr::filter(., `TCGA Studies`== study_subset_selection),
-                .
-            ) %>% 
+            dplyr::filter(sample_group ==  group_internal_choice()) %>% 
+            # `if`(
+            #     group_internal_choice == "Subtype_Curated_Malta_Noushmehr_et_al",
+            #     dplyr::filter(., `TCGA Studies`== study_subset_selection),
+            #     .
+            # ) %>% 
             dplyr::pull(FeatureValue)
         selectInput(
             ns("tbd_method"),
