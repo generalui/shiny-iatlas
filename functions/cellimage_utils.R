@@ -14,6 +14,9 @@ get.data.variables <- function(
 # gene/imageprotein expression functions -------------------------------------------------------
 
 ## Like filter_immunomodulator_expression_df but for multiple genes
+## hmm that is now gone
+
+
 multi_filter_imageprotein_expression_df <- function(
   df, id_col, filter_col, expression_col, filter_values){
   
@@ -32,6 +35,8 @@ multi_filter_imageprotein_expression_df <- function(
 }
 
 ## This function is based on build_immunomodulator_expression_df
+## Hmm. that functions is now gone (Mid Sep 2019)
+
 
 build_multi_imageprotein_expression_df <- function(
   group_df, ## fmx_df row filtered based on availability of sample groups
@@ -51,6 +56,7 @@ build_multi_imageprotein_expression_df <- function(
   expression_df$FILTER <- as.vector(expression_df$FILTER)  ## was a factor
   
   group_df <- group_df %>% 
+    dplyr::mutate(Tumor_Fraction = 1 - Stromal_Fraction) %>%
     get_complete_df_by_columns(c(group_col, id_col)) %>% ## this function is in function/utils.R
     select(GROUP = group_col, ID = id_col)
   
@@ -59,6 +65,29 @@ build_multi_imageprotein_expression_df <- function(
     dplyr::select(ID,GROUP, FILTER, LOG_COUNT)
 
 }
+
+build_multi_imageprotein_expression_df_2 <- function(
+  group_df, ## fmx_df row filtered based on availability of sample groups
+  genes_needed,  ## gene choices 
+  group_col, ## the fmx_df column for the group
+  expression_df = panimmune_data$im_expr_df,
+  id_col = "ParticipantBarcode"){
+  
+  ## may need complete row checks for each case,  perhaps
+  group_only_df <- group_df %>% 
+    dplyr::select(ID = id_col,GROUP = group_col)
+  
+  im_expr_df_long <- im_expr_df %>% tidyr::gather("FILTER","COUNT",-id_col) %>%
+    dplyr::mutate(LOG_COUNT = log10(COUNT + 1)) %>% 
+    dplyr::select(-COUNT,ID=id_col)
+  
+  result_df <- 
+    dplyr::inner_join(group_only_df, im_expr_df_long, by = "ID") %>%
+    dplyr::select(GROUP, FILTER, LOG_COUNT)
+
+}
+
+
 
 # cellcontent functions -------------------------------------------------------
 
@@ -69,7 +98,6 @@ build_cellcontent_df <- function(
   id_col = "ParticipantBarcode"
   ){
   
-  #### WORK HERE
   assert_df_has_columns(df, c(group_column, cell_columns))
   long_df <- df %>% 
     dplyr::select(
@@ -85,16 +113,6 @@ build_cellcontent_df <- function(
   return(result_df)
 }
 
-## not sure why this is here .Seems like it is already in functions/transform.R and should be deleted
-#build_cell_fraction_df <- function(df, group_column, value_columns){
-#  assert_df_has_columns(df, c(group_column, value_columns))
-#  result_df <- df %>% 
-#    dplyr::select(GROUP = group_column, value_columns) %>% 
-#    tidyr::gather(fraction_type, fraction, -GROUP) %>% 
-#    tidyr::drop_na()
-#  assert_df_has_columns(result_df, c("GROUP", "fraction_type", "fraction"))
-#  return(result_df)
-#}
 
 #--------- color functions -----------
 
