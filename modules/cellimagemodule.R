@@ -109,12 +109,7 @@ cellimage <- function(
   
   
   output$cellPlot <- renderPlot({
-    cat("my choice ",input$tbd_method,"\n")
-    cat("group_display_choice",group_display_choice(),"\n")
-    cat("group_internal_choice",group_internal_choice(),"\n")
-    cat("group membs")
-    plot(0,0)
-    
+
     ## Annotations of image objects
     ## Variable annotations are ImageVariableID, FeatureLabel, Source, ColorScale
     variable.annotations <- readr::read_tsv('data/cell_image_id_annotations.tsv') 
@@ -201,7 +196,7 @@ cellimage <- function(
       ioa <- image.object.labels[ind]
       datavar <- variable.annotations %>% dplyr::filter(ImageVariableID==ioa) %>% purrr::pluck("FeatureLabel")
       colormap <-   variable.annotations %>% dplyr::filter(ImageVariableID==ioa) %>% purrr::pluck("ColorScale")
-      fill.color.new[ind] <- getVarColor(datavar,soi,colormap)
+      fill.color.new[ind] <- getVarColor(datavar,soi,colormap,dfv,minvec,maxvec)
     }
     for (s in pathlabels ){
       wnew$children[[gTree.name]]$children[[s]]$gp$fill <- fill.color.new[s]

@@ -16,11 +16,13 @@ load_manifest <- function() {
 load_feature_matrix <- function() {
     if (!USE_REMOTE_GS) {
         fmx <- list(
-            fmx_df = feather::read_feather("data/fmx_df.feather")
+            fmx_df = feather::read_feather("data/fmx_df.feather") %>%
+              dplyr::mutate(Tumor_Fraction = 1 - Stromal_Fraction) ## should go into input file
         )
     } else {
         fmx <- fetch_feature_matrix() %>% 
-            format_feature_matrix()
+            format_feature_matrix() %>%
+          dplyr::mutate(Tumor_Fraction = 1 - Stromal_Fraction) ## should go into input table, maybe
     }
     return(fmx)
 }

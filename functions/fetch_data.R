@@ -98,7 +98,8 @@ format_feature_matrix <- function(feature_mat_data) {
         c("age_at_initial_pathologic_diagnosis", "height", "weight"), 
         as.numeric
         ) %>% 
-      dplyr::mutate_if(is.factor, as.character)
+      dplyr::mutate_if(is.factor, as.character) %>% 
+      dplyr::mutate(Tumor_Fraction=1-Stromal_Fraction)
   )
 }
 

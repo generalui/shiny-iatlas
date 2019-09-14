@@ -117,7 +117,6 @@ build_cellcontent_df <- function(df, group_column){
     if(nrow(long_df) == 0) return(long_df)
     
     result_df <- long_df %>% 
-        dplyr::mutate(Tumor_Fraction = 1 - Stromal_Fraction) %>% 
         tidyr::gather(fraction_type, fraction, -GROUP)
     assert_df_has_columns(result_df, c("GROUP", "fraction_type", "fraction"))
     return(result_df)
