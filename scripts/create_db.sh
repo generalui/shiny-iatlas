@@ -36,7 +36,7 @@ if [ ! "$(docker ps -q -f name=$docker_image)" ]; then
         docker rm $docker_image
     fi
     # Run the container
-    docker run --rm  --name $docker_image -e POSTGRES_PASSWORD=$db_pw -d -p $db_port:$db_port -v $db_data_dir:/var/lib/postgresql/data postgres:11.5
+    docker run --rm --name $docker_image -e POSTGRES_PASSWORD=$db_pw -d -p $db_port:$db_port -v /$db_data_dir:/var/lib/postgresql postgres:11.5
 fi
 
 >&2 echo -e "${YELLOW}Postgres is starting - please be patient${NC}"
@@ -47,7 +47,7 @@ done
 >&2 echo -e "${GREEN}Postgres is up - building database and tables${NC}"
 
 # Copy the SQL file into the docker container.
-docker cp ./sql/$create_db_sql $docker_image:/$create_db_sql
+docker cp $DIR/sql/$create_db_sql $docker_image:/$create_db_sql
 
 # Run the SQL script within the docker container using the docker container's psql.
-docker exec -u $db_user $docker_image psql -f /$create_db_sql
+docker exec -u $db_user $docker_image psql -f //$create_db_sql
