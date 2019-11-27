@@ -1,4 +1,4 @@
-DB_NAME <- Sys.getenv("DB_NAME", unset = "shiny_iatlas_test")
+DB_NAME <- Sys.getenv("DB_NAME", unset = "iatlas_shiny_test")
 DB_HOST <- Sys.getenv("DB_HOST", unset = "localhost")
 DB_PORT <- Sys.getenv("DB_PORT", unset = "5432")
 DB_USER <- Sys.getenv("DB_USER", unset = "postgres")
